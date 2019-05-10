@@ -390,20 +390,39 @@ PAUSE
 @ECHO CD %%DIR%%>> step2-compile-final.bat
 @ECHO PAUSE>> step2-compile-final.bat
 
+SET /P SHOULD_CLEAN=Do you want to clean downloads folder? [y/n]
+
+IF /I %SHOULD_CLEAN%==Y (
+    
+    IF EXIST %DIR%\build-cache\zlib RD /s /q %DIR%\build-cache\zlib
+    IF EXIST %DIR%\downloads\libxlsxwriter-master RD /s /q %DIR%\downloads\libxlsxwriter-master
+    IF EXIST %DIR%\downloads\php-7.1.3-devel-VC14-x64 RD /s /q %DIR%\downloads\php-7.1.3-devel-VC14-x64
+    IF EXIST %DIR%\downloads\php-ext-excel-export-master RD /s /q %DIR%\downloads\php-ext-excel-export-master
+    IF EXIST %DIR%\downloads\php-sdk-binary-tools-php-sdk-2.1.2 RD /s /q %DIR%\downloads\php-sdk-binary-tools-php-sdk-2.1.2
+    IF EXIST %DIR%\downloads\zlib-master RD /s /q %DIR%\downloads\zlib-master
+
+    IF EXIST %DIR%\downloads\.wget-hsts DEL /f /q %DIR%\downloads\.wget-hsts
+    IF EXIST %DIR%\downloads\7-zip.chm DEL /f /q %DIR%\downloads\7-zip.chm
+    IF EXIST %DIR%\downloads\license.txt DEL /f /q %DIR%\downloads\license.txt
+    IF EXIST %DIR%\downloads\readme.txt DEL /f /q %DIR%\downloads\readme.txt
+
+)
+
 PAUSE
+
 EXIT
 
 :UnZipFile <ExtractTo> <newzipfile>
-set vbs="%temp%\_.vbs"
-if exist %vbs% del /f /q %vbs%
->%vbs%  echo Set fso = CreateObject("Scripting.FileSystemObject")
->>%vbs% echo If NOT fso.FolderExists(%1) Then
->>%vbs% echo fso.CreateFolder(%1)
->>%vbs% echo End If
->>%vbs% echo set objShell = CreateObject("Shell.Application")
->>%vbs% echo set FilesInZip=objShell.NameSpace(%2).items
->>%vbs% echo call objShell.NameSpace(%1).CopyHere(FilesInZip, 16)
->>%vbs% echo Set fso = Nothing
->>%vbs% echo Set objShell = Nothing
-cscript //nologo %vbs%
-if exist %vbs% del /f /q %vbs%
+SET vbs="%temp%\_.vbs"
+IF EXIST %vbs% DEL /f /q %vbs%
+>%vbs%  ECHO Set fso = CreateObject("Scripting.FileSystemObject")
+>>%vbs% ECHO If NOT fso.FolderExists(%1) Then
+>>%vbs% ECHO fso.CreateFolder(%1)
+>>%vbs% ECHO End If
+>>%vbs% ECHO set objShell = CreateObject("Shell.Application")
+>>%vbs% ECHO set FilesInZip=objShell.NameSpace(%2).items
+>>%vbs% ECHO call objShell.NameSpace(%1).CopyHere(FilesInZip, 16)
+>>%vbs% ECHO Set fso = Nothing
+>>%vbs% ECHO Set objShell = Nothing
+CSCRIPT //nologo %vbs%
+IF EXIST %vbs% DEL /f /q %vbs%
