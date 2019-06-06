@@ -80,12 +80,14 @@ ZEND_BEGIN_ARG_INFO_EX(xls_freeze_arginfo, 0, 0, 2)
                 ZEND_ARG_INFO(0, column)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(xls_header_arginfo, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(xls_header_arginfo, 0, 0, 2)
                 ZEND_ARG_INFO(0, header)
+                ZEND_ARG_INFO(0, format_handle)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(xls_data_arginfo, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(xls_data_arginfo, 0, 0, 2)
                 ZEND_ARG_INFO(0, data)
+                ZEND_ARG_INFO(0, format_handle)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(xls_insert_text_arginfo, 0, 0, 4)
@@ -329,15 +331,20 @@ PHP_METHOD(vtiful_xls, constMemory)
 /* }}} */
 
 
-/** {{{ \Vtiful\Kernel\xls::header(array $header)
+/** {{{ \Vtiful\Kernel\xls::header(array $header, array $format)
  */
 PHP_METHOD(vtiful_xls, header)
 {
     zval *header, *header_value;
     zend_long header_l_key;
+    zval *format_handle = NULL;
 
-    ZEND_PARSE_PARAMETERS_START(1, 1)
+    int argc  = ZEND_NUM_ARGS();
+
+    ZEND_PARSE_PARAMETERS_START(1, 2)
             Z_PARAM_ARRAY(header)
+            Z_PARAM_OPTIONAL         
+            Z_PARAM_ARRAY(format_handle)
     ZEND_PARSE_PARAMETERS_END();
 
     ZVAL_COPY(return_value, getThis());
@@ -345,20 +352,50 @@ PHP_METHOD(vtiful_xls, header)
     xls_object *obj = Z_XLS_P(getThis());
 
     ZEND_HASH_FOREACH_NUM_KEY_VAL(Z_ARRVAL_P(header), header_l_key, header_value)
-         type_writer(header_value, 0, header_l_key, &obj->ptr, NULL);
-         zval_ptr_dtor(header_value);
+        if (argc == 1) {
+            type_writer(header_value, 0, header_l_key, &obj->ptr, NULL);
+        } else if (argc == 2) {
+            zend_bool matched = FALSE;
+            zend_long iRow;
+            zend_string *sRow;
+            zval *rowArray;
+            ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(format_handle), iRow, sRow, rowArray)
+                if (iRow == 0) {
+                    zend_long iCol;
+                    zend_string *sCol;
+                    zval *formatData;
+                    ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(rowArray), iCol, sCol, formatData)
+                        if (iCol == header_l_key) {
+                            type_writer2(header_value, 0, header_l_key, &obj->ptr, zval_get_format(formatData));
+                            matched = TRUE;
+                            break;
+                        }
+                    ZEND_HASH_FOREACH_END();
+                }
+                if (matched) { break; }
+            ZEND_HASH_FOREACH_END();
+            if (matched == FALSE) {
+                type_writer(header_value, 0, header_l_key, &obj->ptr, NULL);
+            }
+        }
+        zval_ptr_dtor(header_value);
     ZEND_HASH_FOREACH_END();
 }
 /* }}} */
 
-/** {{{ \Vtiful\Kernel\xls::data(array $data)
+/** {{{ \Vtiful\Kernel\xls::data(array $data, array $format)
  */
 PHP_METHOD(vtiful_xls, data)
 {
     zval *data = NULL, *data_r_value = NULL;
+    zval *format_handle = NULL;
 
-    ZEND_PARSE_PARAMETERS_START(1, 1)
-            Z_PARAM_ARRAY(data)
+    int argc  = ZEND_NUM_ARGS();
+
+    ZEND_PARSE_PARAMETERS_START(1, 2)
+            Z_PARAM_ARRAY(data)   
+            Z_PARAM_OPTIONAL         
+            Z_PARAM_ARRAY(format_handle)
     ZEND_PARSE_PARAMETERS_END();
 
     ZVAL_COPY(return_value, getThis());
@@ -366,14 +403,49 @@ PHP_METHOD(vtiful_xls, data)
     xls_object *obj = Z_XLS_P(getThis());
 
     ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(data), data_r_value)
+
         if(Z_TYPE_P(data_r_value) == IS_ARRAY) {
-            SHEET_LINE_ADD(obj)
+
+            SHEET_LINE_ADD(obj);
+
+            zend_long current_row = SHEET_CURRENT_LINE(obj);
 
             ZEND_HASH_FOREACH_BUCKET(Z_ARRVAL_P(data_r_value), Bucket *bucket)
-                type_writer(&bucket->val, SHEET_CURRENT_LINE(obj), bucket->h, &obj->ptr, NULL);
+
+                zend_long current_col = bucket->h;
+
+                if (argc == 1) {
+
+                    type_writer(&bucket->val, current_row, current_col, &obj->ptr, NULL);
+
+                } else if (argc == 2) {
+                    zend_bool matched = FALSE;
+                    zend_long iRow;
+                    zend_string *sRow;
+                    zval *rowArray;
+                    ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(format_handle), iRow, sRow, rowArray)
+                        if ((current_row == 1 && iRow == current_row - 1) || iRow == current_row) {
+                            zend_long iCol;
+                            zend_string *sCol;
+                            zval *formatData;
+                            ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(rowArray), iCol, sCol, formatData)
+                                if (iCol == current_col) {
+                                    type_writer2(&bucket->val, current_row, current_col, &obj->ptr, zval_get_format(formatData));
+                                    matched = TRUE;
+                                    break;
+                                }
+                            ZEND_HASH_FOREACH_END();
+                        }
+                        if (matched) { break; }
+                    ZEND_HASH_FOREACH_END();
+                    if (matched == FALSE) {
+                        type_writer(&bucket->val, current_row, current_col, &obj->ptr, NULL);
+                    }
+                }
                 zval_ptr_dtor(&bucket->val);
             ZEND_HASH_FOREACH_END();
         }
+
     ZEND_HASH_FOREACH_END();
 }
 /* }}} */
