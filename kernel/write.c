@@ -44,6 +44,33 @@ void type_writer(zval *value, zend_long row, zend_long columns, xls_resource_t *
     }
 }
 
+void type_writer2(zval *value, zend_long row, zend_long columns, xls_resource_t *res, lxw_format *format)
+{
+    switch (Z_TYPE_P(value)) {
+        case IS_STRING:
+            if(format) {
+                worksheet_write_string(res->worksheet, row, columns, ZSTR_VAL(zval_get_string(value)), format);
+            } else {
+                worksheet_write_string(res->worksheet, row, columns, ZSTR_VAL(zval_get_string(value)), NULL);
+            }
+            break;
+        case IS_LONG:
+            if(format) {
+                worksheet_write_number(res->worksheet, row, columns, zval_get_long(value), format);
+            } else {
+                worksheet_write_number(res->worksheet, row, columns, zval_get_long(value), NULL);
+            }
+            break;
+        case IS_DOUBLE:
+            if(format) {
+                worksheet_write_number(res->worksheet, row, columns, zval_get_double(value), format);
+            } else {
+                worksheet_write_number(res->worksheet, row, columns, zval_get_double(value), NULL);
+            }
+            break;
+    }
+}
+
 void url_writer(zend_long row, zend_long columns, xls_resource_t *res, zend_string *url, lxw_format *format)
 {
     worksheet_write_url(res->worksheet, row, columns, ZSTR_VAL(url), format);
