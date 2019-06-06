@@ -114,6 +114,7 @@ STATIC void _populate_range(lxw_workbook *self, lxw_series_range *range);
 STATIC void _populate_range_dimensions(lxw_workbook *self, lxw_series_range *range);
 
 void type_writer(zval *value, zend_long row, zend_long columns, xls_resource_t *res, zend_string *format);
+void type_writer2(zval *value, zend_long row, zend_long columns, xls_resource_t *res, lxw_format *format);
 void chart_writer(zend_long row, zend_long columns, xls_resource_chart_t *chart_resource, xls_resource_t *res);
 void url_writer(zend_long row, zend_long columns, xls_resource_t *res, zend_string *url, lxw_format *format);
 void image_writer(zval *value, zend_long row, zend_long columns, double width, double height, xls_resource_t *res);
