@@ -355,7 +355,7 @@ PHP_METHOD(vtiful_xls, header)
         if (argc == 1) {
             type_writer(header_value, 0, header_l_key, &obj->ptr, NULL);
         } else if (argc == 2) {
-            zend_bool matched = false;
+            zend_bool matched = LXW_FALSE;
             zend_long iRow;
             zend_string *sRow;
             zval *rowArray;
@@ -367,14 +367,14 @@ PHP_METHOD(vtiful_xls, header)
                     ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(rowArray), iCol, sCol, formatData)
                         if (iCol == header_l_key) {
                             type_writer2(header_value, 0, header_l_key, &obj->ptr, zval_get_format(formatData));
-                            matched = true;
+                            matched = LXW_TRUE;
                             break;
                         }
                     ZEND_HASH_FOREACH_END();
                 }
-                if (matched) { break; }
+                if (matched == LXW_TRUE) { break; }
             ZEND_HASH_FOREACH_END();
-            if (matched == false) {
+            if (matched == LXW_FALSE) {
                 type_writer(header_value, 0, header_l_key, &obj->ptr, NULL);
             }
         }
@@ -419,7 +419,7 @@ PHP_METHOD(vtiful_xls, data)
                     type_writer(&bucket->val, current_row, current_col, &obj->ptr, NULL);
 
                 } else if (argc == 2) {
-                    zend_bool matched = false;
+                    zend_bool matched = LXW_FALSE;
                     zend_long iRow;
                     zend_string *sRow;
                     zval *rowArray;
@@ -431,14 +431,14 @@ PHP_METHOD(vtiful_xls, data)
                             ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(rowArray), iCol, sCol, formatData)
                                 if (iCol == current_col) {
                                     type_writer2(&bucket->val, current_row, current_col, &obj->ptr, zval_get_format(formatData));
-                                    matched = true;
+                                    matched = LXW_TRUE;
                                     break;
                                 }
                             ZEND_HASH_FOREACH_END();
                         }
                         if (matched) { break; }
                     ZEND_HASH_FOREACH_END();
-                    if (matched == false) {
+                    if (matched == LXW_FALSE) {
                         type_writer(&bucket->val, current_row, current_col, &obj->ptr, NULL);
                     }
                 }
