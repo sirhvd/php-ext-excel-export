@@ -187,7 +187,11 @@ workbook_file(xls_resource_t *self)
     _add_chart_cache_data(self->workbook);
 
     /* Create a packager object to assemble sub-elements into a zip file. */
-    packager = lxw_packager_new(self->workbook->filename, self->workbook->options.tmpdir);
+    #ifdef HAVE_WORKBOOK_ADD_VBA_PROJECT
+        packager = lxw_packager_new(self->workbook->filename, self->workbook->options.tmpdir, 0);
+    #else
+        packager = lxw_packager_new(self->workbook->filename, self->workbook->options.tmpdir);
+    #endif
 
     /* If the packager fails it is generally due to a zip permission error. */
     if (packager == NULL) {
